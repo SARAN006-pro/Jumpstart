@@ -40,7 +40,7 @@ public class Note extends Auditable {
     private String title;
 
     @Lob
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "word_count", nullable = false)
@@ -81,7 +81,7 @@ public class Note extends Auditable {
     private String syncStatus = "NONE";
 
     @Lob
-    @Column(name = "conflict_content", columnDefinition = "LONGTEXT")
+    @Column(name = "conflict_content", columnDefinition = "TEXT")
     private String conflictContent;
 
     @Column(name = "conflict_detected_at")
