@@ -1,6 +1,7 @@
 package com.jumpstart.goal;
 
 import com.jumpstart.common.audit.Auditable;
+import com.jumpstart.roadmap.Roadmap;
 import com.jumpstart.topic.Topic;
 import com.jumpstart.user.User;
 import jakarta.persistence.*;
@@ -54,6 +55,14 @@ public class Goal extends Auditable {
     @Column(length = 30)
     private String unit;
 
+    @Column(name = "metric_type", length = 20)
+    @Builder.Default
+    private String metricType = "HOURS";
+
+    @Column(name = "tracking_type", length = 20)
+    @Builder.Default
+    private String trackingType = "MANUAL";
+
     @Column(name = "due_date")
     private LocalDate dueDate;
 
@@ -61,6 +70,27 @@ public class Goal extends Auditable {
     @JoinColumn(name = "topic_id")
     private Topic topic;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "roadmap_id")
+    private Roadmap linkedRoadmap;
+
+    @Column(name = "streak_count", nullable = false)
+    @Builder.Default
+    private int streakCount = 0;
+
+    @Column(name = "best_streak", nullable = false)
+    @Builder.Default
+    private int bestStreak = 0;
+
+    @Column(name = "last_checked_in_date")
+    private LocalDate lastCheckedInDate;
+
     @Column(name = "completed_at")
     private Instant completedAt;
+
+    @Column(name = "prerequisite_goal_id")
+    private Long prerequisiteGoalId;
+
+    @Column(name = "unlock_threshold")
+    private Double unlockThreshold;
 }

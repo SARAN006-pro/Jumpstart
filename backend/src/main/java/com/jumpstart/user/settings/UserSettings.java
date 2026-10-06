@@ -43,6 +43,9 @@ public class UserSettings {
     @Builder.Default
     private int dailyStudyHours = 2;
 
+    @Column(name = "availability", columnDefinition = "TEXT")
+    private String availability;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

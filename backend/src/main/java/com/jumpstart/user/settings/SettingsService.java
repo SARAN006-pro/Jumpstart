@@ -90,7 +90,7 @@ public class SettingsService {
     public UserSettingsResponse get(Long userId) {
         return repository.findByUserId(userId)
                 .map(UserSettingsResponse::from)
-                .orElse(new UserSettingsResponse(null, null, 2, null, false, null, null));
+                .orElse(new UserSettingsResponse(null, null, 2, null, false, null, null, null));
     }
 
     public UserSettings getSettings(Long userId) {
@@ -112,6 +112,9 @@ public class SettingsService {
         }
         if (request.obsidianVaultPath() != null) {
             settings.setObsidianVaultPath(request.obsidianVaultPath());
+        }
+        if (request.availability() != null) {
+            settings.setAvailability(request.availability());
         }
         return UserSettingsResponse.from(repository.save(settings));
     }

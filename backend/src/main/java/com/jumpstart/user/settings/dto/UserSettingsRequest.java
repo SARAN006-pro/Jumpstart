@@ -4,5 +4,6 @@ public record UserSettingsRequest(
         String obsidianVaultName,
         Integer dailyStudyHours,
         String obsidianVaultPath,
-        String notesStoragePath
+        String notesStoragePath,
+        String availability
 ) {}

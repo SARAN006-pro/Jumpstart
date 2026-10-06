@@ -1,15 +1,26 @@
-import { Search, Bell, Flame, Menu } from "lucide-react";
+import { Search, Flame, Menu } from "lucide-react";
 import { useUIStore } from "../../store/ui";
 import { useAuthStore } from "../../store/auth";
-import NotificationsPanel from "./NotificationsPanel";
+import NotificationPanel from "../notifications/NotificationPanel";
+import { useNotificationStore } from "../../store/notifications";
 import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
 import { type DashboardResponse } from "../../lib/types";
 
 export default function Topbar({ title, mobileMenu }: { title?: string; mobileMenu?: () => void }) {
-  const { setCommandOpen, notificationsOpen, setNotificationsOpen } = useUIStore();
-  const { user: authUser } = useAuthStore();
-  const [bellHover, setBellHover] = useState(false);
+  const { setCommandOpen } = useUIStore();
+  const { user: authUser, isAuthenticated } = useAuthStore();
+  const connect = useNotificationStore((s) => s.connect);
+  const disconnect = useNotificationStore((s) => s.disconnect);
+
+  useEffect(() => {
+    if (isAuthenticated && authUser) {
+      connect(authUser.id);
+    } else {
+      disconnect();
+    }
+    return () => disconnect();
+  }, [isAuthenticated, authUser?.id]);
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
@@ -49,18 +60,7 @@ export default function Topbar({ title, mobileMenu }: { title?: string; mobileMe
           </div>
         )}
 
-        <div className="relative">
-          <button
-            onClick={() => setNotificationsOpen(!notificationsOpen)}
-            onMouseEnter={() => setBellHover(true)}
-            onMouseLeave={() => setBellHover(false)}
-            className="relative p-2 rounded-lg text-mist-300 hover:bg-slate-800 transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell size={18} className={bellHover ? "text-mist-100" : ""} />
-          </button>
-          {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
-        </div>
+        <NotificationPanel />
 
         <div className="w-8 h-8 rounded-full bg-moss-500 flex items-center justify-center text-[12px] font-semibold text-ink-900">
           {displayName.split(" ").map((n) => n[0]).join("").slice(0, 2)}

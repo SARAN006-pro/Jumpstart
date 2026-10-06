@@ -5,8 +5,12 @@ import com.jumpstart.common.exception.ForbiddenException;
 import com.jumpstart.common.exception.ResourceNotFoundException;
 import com.jumpstart.goal.dto.GoalRequest;
 import com.jumpstart.goal.dto.GoalResponse;
+import com.jumpstart.roadmap.Roadmap;
+import com.jumpstart.roadmap.RoadmapRepository;
 import com.jumpstart.schedule.StudyScheduleRepository;
 import com.jumpstart.schedule.dto.ScheduleItemResponse;
+import com.jumpstart.schedule.session.ScheduleSession;
+import com.jumpstart.schedule.session.ScheduleSessionRepository;
 import com.jumpstart.topic.Topic;
 import com.jumpstart.topic.TopicRepository;
 import com.jumpstart.topic.timer.TopicTimerSessionRepository;
@@ -21,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,14 +35,20 @@ public class GoalService {
     private final GoalRepository goalRepository;
     private final UserRepository userRepository;
     private final TopicRepository topicRepository;
+    private final RoadmapRepository roadmapRepository;
     private final TopicTimerSessionRepository timerSessionRepository;
     private final StudyScheduleRepository scheduleRepository;
+    private final ScheduleSessionRepository sessionRepository;
+    private final GoalEngineService goalEngine;
 
     @Transactional
     public GoalResponse create(GoalRequest request, Long ownerId) {
         User owner = userRepository.findById(ownerId).orElseThrow(() -> new ResourceNotFoundException("User", ownerId));
         Topic topic = request.topicId() != null
                 ? topicRepository.findById(request.topicId()).orElseThrow(() -> new ResourceNotFoundException("Topic", request.topicId()))
+                : null;
+        Roadmap roadmap = request.roadmapId() != null
+                ? roadmapRepository.findById(request.roadmapId()).orElseThrow(() -> new ResourceNotFoundException("Roadmap", request.roadmapId()))
                 : null;
 
         Goal goal = Goal.builder()
@@ -49,11 +61,22 @@ public class GoalService {
                 .targetValue(request.targetValue())
                 .progressValue(request.progressValue())
                 .unit(request.unit())
+                .metricType(request.metricType())
+                .trackingType(request.trackingType())
                 .dueDate(request.dueDate())
                 .topic(topic)
+                .linkedRoadmap(roadmap)
+                .prerequisiteGoalId(request.prerequisiteGoalId())
+                .unlockThreshold(request.unlockThreshold())
                 .build();
 
-        return GoalResponse.from(goalRepository.save(goal));
+        goal = goalRepository.save(goal);
+
+        if (request.cadence().equals("LONGTERM")) {
+            goalEngine.autoGenerateMilestones(goal);
+        }
+
+        return GoalResponse.from(goal, false);
     }
 
     public PageResponse<GoalResponse> list(Long ownerId, Cadence cadence, String status, Long topicId, Pageable pageable) {
@@ -61,7 +84,22 @@ public class GoalService {
         if (cadence != null) page = goalRepository.findByOwnerIdAndCadence(ownerId, cadence, pageable);
         else if (status != null) page = goalRepository.findByOwnerIdAndStatus(ownerId, status, pageable);
         else if (topicId != null) page = goalRepository.findByOwnerIdAndTopicId(ownerId, topicId, pageable);
-        return PageResponse.from(page.map(GoalResponse::from));
+        Map<Long, Goal> allMap = goalRepository.findByOwnerId(ownerId).stream()
+                .collect(Collectors.toMap(Goal::getId, g -> g));
+        return PageResponse.from(page.map(g -> {
+            boolean locked = computeLocked(g, allMap);
+            return GoalResponse.from(g, locked);
+        }));
+    }
+
+    private boolean computeLocked(Goal goal, Map<Long, Goal> allGoals) {
+        if (goal.getPrerequisiteGoalId() == null || goal.getUnlockThreshold() == null) return false;
+        Goal prereq = allGoals.get(goal.getPrerequisiteGoalId());
+        if (prereq == null) return false;
+        double prereqProgress = prereq.getTargetValue() > 0
+                ? prereq.getProgressValue() / prereq.getTargetValue()
+                : 0;
+        return prereqProgress < goal.getUnlockThreshold();
     }
 
     @Transactional
@@ -80,13 +118,25 @@ public class GoalService {
         goal.setTargetValue(request.targetValue());
         goal.setProgressValue(request.progressValue());
         goal.setUnit(request.unit());
+        goal.setMetricType(request.metricType());
+        goal.setTrackingType(request.trackingType());
         goal.setDueDate(request.dueDate());
         if (request.topicId() != null) {
             Topic topic = topicRepository.findById(request.topicId())
                     .orElseThrow(() -> new ResourceNotFoundException("Topic", request.topicId()));
             goal.setTopic(topic);
         }
-        return GoalResponse.from(goalRepository.save(goal));
+        if (request.roadmapId() != null) {
+            Roadmap roadmap = roadmapRepository.findById(request.roadmapId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Roadmap", request.roadmapId()));
+            goal.setLinkedRoadmap(roadmap);
+        }
+        if (request.prerequisiteGoalId() != null) goal.setPrerequisiteGoalId(request.prerequisiteGoalId());
+        if (request.unlockThreshold() != null) goal.setUnlockThreshold(request.unlockThreshold());
+        goal = goalRepository.save(goal);
+        Map<Long, Goal> allMap = goalRepository.findByOwnerId(goal.getOwner().getId()).stream()
+                .collect(Collectors.toMap(Goal::getId, g -> g));
+        return GoalResponse.from(goal, computeLocked(goal, allMap));
     }
 
     @Transactional
@@ -137,9 +187,16 @@ public class GoalService {
                 .targetValue(plannedMinutes)
                 .progressValue(0)
                 .unit("minutes")
+                .metricType("HOURS")
+                .trackingType("AUTOMATIC")
                 .dueDate(LocalDate.now())
                 .topic(topic)
                 .build();
-        return GoalResponse.from(goalRepository.save(goal));
+        return GoalResponse.from(goalRepository.save(goal), false);
+    }
+
+    public ScheduleSession loadSession(Long sessionId) {
+        return sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Session", sessionId));
     }
 }

@@ -1,5 +1,6 @@
 package com.jumpstart.topic.timer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jumpstart.topic.Topic;
 import com.jumpstart.user.User;
 import jakarta.persistence.*;
@@ -16,10 +17,12 @@ public class TopicTimerSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "topic_id", nullable = false)
     private Topic topic;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

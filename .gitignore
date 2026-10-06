@@ -37,3 +37,6 @@ Thumbs.db
 # ─<arg_value> Extractor ──
 scripts/roadmap-extractor/node_modules/
 scripts/roadmap-extractor/package-lock.json
+
+*.tsbuildinfo
+

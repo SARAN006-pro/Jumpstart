@@ -21,6 +21,8 @@ import {
   RESOURCE_STATUSES,
 } from "../lib/types";
 import { colorMap, relativeTime } from "../lib/utils";
+import CognitiveDashboard from "../components/analytics/CognitiveDashboard";
+import MonthlyReportButton from "../components/report/MonthlyReportButton";
 
 export default function Progress() {
   const [workspace, setWorkspace] = useState<WorkspaceResponse | null>(null);
@@ -33,20 +35,26 @@ export default function Progress() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
-    try {
-      const [w, d, a] = await Promise.all([
-        api.get<WorkspaceResponse>("/progress/workspace"),
-        api.get<DashboardResponse>("/dashboard"),
-        api.get<RecentActivityResponse[]>("/recent-activity?limit=30"),
-      ]);
-      setWorkspace(w);
-      setDashboard(d);
-      setActivity(a);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load progress data.");
-    } finally {
-      setLoading(false);
+
+    const results = await Promise.allSettled([
+      api.get<WorkspaceResponse>("/progress/workspace"),
+      api.get<DashboardResponse>("/dashboard"),
+      api.get<RecentActivityResponse[]>("/recent-activity?limit=30"),
+    ]);
+
+    const wResult = results[0];
+    const dResult = results[1];
+    const aResult = results[2];
+
+    if (wResult.status === "fulfilled") setWorkspace(wResult.value);
+    if (dResult.status === "fulfilled") setDashboard(dResult.value);
+    if (aResult.status === "fulfilled") setActivity(aResult.value);
+
+    if (wResult.status === "rejected" && dResult.status === "rejected") {
+      setError("Failed to load progress data.");
     }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -72,7 +80,7 @@ export default function Progress() {
     );
   }
 
-  if (error) {
+  if (error && !workspace) {
     return (
       <AppShell title="Progress">
         <div className="flex flex-col items-center justify-center py-20">
@@ -85,15 +93,18 @@ export default function Progress() {
     );
   }
 
-  if (!workspace || !dashboard) return null;
+  if (!workspace) return null;
 
-  const allSessions = dashboard.activityHeatmap;
+  const allSessions = dashboard?.activityHeatmap ?? [];
 
   return (
     <AppShell title="Progress">
-      <div className="mb-7">
-        <h1 className="font-display text-[26px] text-paper">Progress &amp; analytics</h1>
-        <p className="text-[13px] text-mist-500 mt-1">A clear-eyed view of where your time and mastery are going.</p>
+      <div className="mb-7 flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-[26px] text-paper">Progress &amp; analytics</h1>
+          <p className="text-[13px] text-mist-500 mt-1">A clear-eyed view of where your time and mastery are going.</p>
+        </div>
+        <MonthlyReportButton workspace={workspace} dashboard={dashboard} activity={activity} />
       </div>
 
       {/* ── Stats Row ── */}
@@ -118,6 +129,11 @@ export default function Progress() {
           <p className="num text-[22px] text-paper">{workspace.completedResources}</p>
           <p className="text-[11px] text-mist-500 uppercase tracking-wider font-bold mt-0.5">Completed</p>
         </div>
+      </div>
+
+      {/* ── Cognitive Analysis (Phase 3.1) ── */}
+      <div className="mb-6">
+        <CognitiveDashboard />
       </div>
 
       {/* ── Continue Learning + Completed Today/Week ── */}
@@ -165,7 +181,7 @@ export default function Progress() {
         <div className="panel p-5">
           <h2 className="text-[14.5px] font-semibold text-paper mb-1">This week</h2>
           <p className="text-[12px] text-mist-500 mb-2">Hours studied per day.</p>
-          <WeeklyBar data={dashboard.weeklyHours} />
+          {dashboard ? <WeeklyBar data={dashboard.weeklyHours} /> : <p className="text-[13px] text-mist-600 py-6 text-center">Weekly data unavailable.</p>}
         </div>
       </div>
 

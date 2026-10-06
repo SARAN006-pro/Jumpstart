@@ -10,4 +10,5 @@ public interface StudyScheduleRepository extends JpaRepository<StudySchedule, Lo
     List<StudySchedule> findByUserIdAndScheduledDateBetweenOrderByScheduledDateAsc(Long userId, LocalDate start, LocalDate end);
     List<StudySchedule> findByUserIdOrderByScheduledDateAsc(Long userId);
     Optional<StudySchedule> findByUserIdAndTopicIdAndScheduledDate(Long userId, Long topicId, LocalDate date);
+    List<StudySchedule> findByScheduledDate(LocalDate date);
 }

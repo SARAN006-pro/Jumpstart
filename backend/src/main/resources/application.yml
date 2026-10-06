@@ -34,6 +34,16 @@ spring:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:placeholder}
+            client-secret: ${GOOGLE_CLIENT_SECRET:placeholder}
+            scope:
+              - email
+              - profile
 
 server:
   port: ${PORT:8080}
@@ -48,6 +58,10 @@ jumpstart:
       refresh-expiration-ms: 604800000
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  ai:
+    groq-api-key: ${GROQ_API_KEY:}
+  oauth2:
+    frontend-url: ${OAUTH2_FRONTEND_URL:http://localhost:5173}
 
 springdoc:
   swagger-ui:

@@ -25,6 +25,7 @@ public class TimerService {
     private final UserRepository userRepository;
     private final GoalService goalService;
 
+    @Transactional(readOnly = true)
     public TimerStatusDTO getActive(Long userId) {
         return stateRepository.findByUserIdAndStatus(userId, "RUNNING")
                 .map(TimerStatusDTO::from)

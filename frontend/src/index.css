@@ -99,3 +99,51 @@
   to { transform: translateX(0); opacity: 1; }
 }
 .animate-slide-in { animation: slide-in 0.25s ease-out; }
+
+@keyframes pulseBorder {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.2); box-shadow: 0 0 12px rgba(239, 68, 68, 0.08); }
+  50% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 24px rgba(239, 68, 68, 0.18); }
+}
+
+/* ── FullCalendar overrides ── */
+.fc { @apply font-body; }
+.fc .fc-toolbar-title { @apply font-display text-[16px] text-paper; }
+.fc .fc-button { @apply rounded-lg border border-slate-700 bg-slate-800 text-mist-300 text-[12px] font-medium px-3 py-1.5 shadow-none hover:bg-slate-700 transition-colors; }
+.fc .fc-button-primary:not(:disabled).fc-button-active { @apply bg-cyan-500/20 border-cyan-500/50 text-cyan-300; }
+.fc .fc-button-primary:disabled { @apply opacity-40; }
+.fc .fc-daygrid-day { @apply border-slate-700/50; }
+.fc .fc-daygrid-day.fc-day-today { background: rgba(6, 182, 212, 0.04); }
+.fc .fc-daygrid-day-top { @apply text-[12px] text-mist-500 py-1; }
+.fc .fc-daygrid-day-number { @apply text-[12px] font-mono tabular-nums; }
+.fc .fc-col-header-cell { @apply border-slate-700/50 py-1.5; }
+.fc .fc-col-header-cell-cushion { @apply text-[10px] uppercase tracking-wider text-mist-500 font-medium; }
+.fc .fc-scrollgrid { @apply border-slate-700/50 rounded-xl overflow-hidden; }
+.fc .fc-scrollgrid-section-header .fc-scrollgrid-section-border { @apply border-b border-slate-700/50; }
+
+/* Pill-style events */
+.fc .fc-daygrid-event {
+  @apply mx-0.5 my-[1px] rounded-md border-0 px-2 py-0.5 text-[11px] font-medium cursor-pointer;
+  backdrop-filter: blur(4px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.fc .fc-daygrid-event:hover {
+  transform: translateY(-1px);
+}
+.fc .fc-daygrid-dot-event { @apply px-2 py-1; }
+.fc .fc-event-title { @apply text-[11px] font-medium truncate; }
+.fc .fc-event-time { @apply text-[10px] font-mono opacity-70; }
+
+/* Ghosting on drag */
+.fc .fc-dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  filter: blur(1px);
+}
+.fc .fc-more-popover { @apply bg-slate-900 border border-slate-700 rounded-xl shadow-2xl; }
+.fc .fc-daygrid-more-link { @apply text-[10px] text-cyan-400 font-medium; }
+
+/* Time grid */
+.fc .fc-timegrid-slot { @apply border-slate-700/30 h-8; }
+.fc .fc-timegrid-axis { @apply border-slate-700/50; }
+.fc .fc-timegrid-now-indicator-line { @apply border-cyan-400; }
+.fc .fc-timegrid-now-indicator-arrow { border-color: theme("colors.cyan.400") transparent transparent; }

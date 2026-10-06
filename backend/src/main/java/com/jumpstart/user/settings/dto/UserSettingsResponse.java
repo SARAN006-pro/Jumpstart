@@ -11,7 +11,8 @@ public record UserSettingsResponse(
         String obsidianVaultPath,
         boolean syncEnabled,
         Instant lastSyncAt,
-        String notesStoragePath
+        String notesStoragePath,
+        String availability
 ) {
     public static UserSettingsResponse from(UserSettings s) {
         return new UserSettingsResponse(
@@ -21,7 +22,8 @@ public record UserSettingsResponse(
                 s.getObsidianVaultPath(),
                 s.isSyncEnabled(),
                 s.getLastSyncAt(),
-                s.getNotesStoragePath()
+                s.getNotesStoragePath(),
+                s.getAvailability()
         );
     }
 }

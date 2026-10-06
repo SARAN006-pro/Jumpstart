@@ -8,9 +8,14 @@
  *  - Typed auth endpoint helpers
  */
 
-const rawBase = import.meta.env.VITE_API_URL || "https://jumpstart-production.up.railway.app";
+const rawBase = (
+  import.meta.env.VITE_API_URL || "https://jumpstart-production.up.railway.app"
+)
+  .split(",")[0]
+  .trim();
 const normalized = rawBase.replace(/\/+$/, "");
 const BASE_URL = normalized.endsWith("/api") ? normalized : normalized + "/api";
+const BACKEND_BASE = normalized.endsWith("/api") ? normalized.slice(0, -4) : normalized;
 
 const ACCESS_TOKEN_KEY = "jumpstart_access_token";
 const REFRESH_TOKEN_KEY = "jumpstart_refresh_token";
@@ -259,6 +264,14 @@ export async function authLogout(): Promise<void> {
     }
   }
   clearTokens();
+}
+
+export function getGoogleOAuthUrl(): string {
+  return `${BACKEND_BASE}/oauth2/authorization/google`;
+}
+
+export function getApiBaseUrl(): string {
+  return BASE_URL;
 }
 
 /* ------------------------------------------------------------------ */

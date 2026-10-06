@@ -26,6 +26,7 @@ interface AuthState {
   ) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (name: string) => Promise<void>;
+  setUser: (user: UserResponse) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => {
@@ -80,6 +81,10 @@ export const useAuthStore = create<AuthState>((set) => {
     async updateProfile(name) {
       const updated = await authUpdateProfile(name);
       set({ user: updated });
+    },
+
+    setUser(user) {
+      set({ user, isAuthenticated: true, isLoading: false });
     },
   };
 });
