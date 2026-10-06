@@ -28,7 +28,7 @@ public class HealthController {
      * Basic health check - returns 200 if application is running.
      * Used by Railway health checks.
      */
-    @GetMapping("/api/health")
+    @GetMapping({"/api/health", "/health"})
     public Map<String, Object> health() {
         return Map.of(
                 "status", "UP",

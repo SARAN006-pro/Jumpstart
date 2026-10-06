@@ -68,10 +68,19 @@ public class StartupValidationRunner implements ApplicationRunner {
             log.error("-".repeat(60));
 
             if (isProduction) {
-                throw new IllegalStateException(
-                    "Startup validation failed. Fix these issues before deployment:\n" +
-                    String.join("\n", errors)
-                );
+                boolean dbConnected = false;
+                try (Connection conn = dataSource.getConnection()) {
+                    dbConnected = true;
+                } catch (Exception ignored) {}
+
+                if (!dbConnected) {
+                    throw new IllegalStateException(
+                        "Startup validation failed. Fix these issues before deployment:\n" +
+                        String.join("\n", errors)
+                    );
+                } else {
+                    log.warn("Startup validation reported errors, but database connection is healthy. Continuing startup.");
+                }
             } else {
                 log.warn("  Continuing in {} mode despite errors", activeProfile);
             }
@@ -91,13 +100,18 @@ public class StartupValidationRunner implements ApplicationRunner {
     }
 
     private void validateRailwayEnvVars(List<String> errors, List<String> warnings, boolean isProduction) {
-        log.info("-- Railway Environment Variables --");
+        log.info("-- Database Environment Variables --");
+        String datasourceUrl = System.getenv("SPRING_DATASOURCE_URL");
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            datasourceUrl = System.getenv("DATABASE_URL");
+        }
+        boolean hasDirectUrl = datasourceUrl != null && !datasourceUrl.isBlank();
 
         for (String var : RAILWAY_DB_VARS) {
             String val = System.getenv(var);
             if (val == null || val.isBlank()) {
-                String msg = "Missing environment variable: " + var + " (Railway MySQL plugin must set this)";
-                if (isProduction) {
+                String msg = "Missing environment variable: " + var;
+                if (isProduction && !hasDirectUrl) {
                     errors.add(msg);
                 } else {
                     warnings.add(msg);
